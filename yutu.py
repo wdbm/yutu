@@ -138,7 +138,7 @@ class Visualisation3D:
                     sys.exit()
             self.clock.tick(frame_rate)
             self.display.fill((0, 0, 0))
-            # Transform all points.
+            # Move all points.
             for point in self.points:
                 # Rotate the point around the x-axis, the y-axis and the z-axis.
                 p_prime = point.rotate(
@@ -208,7 +208,7 @@ class Visualisation3D:
                 self.displacementY += -displacement_change_rate
             self.clock.tick(frame_rate)
             self.display.fill((0, 0, 0))
-            # move all points
+            # Move all points.
             for point in self.points:
                 # Rotate the point around the x-axis, the y-axis and the z-axis.
                 p_prime = point.rotate(
