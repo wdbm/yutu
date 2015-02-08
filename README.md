@@ -4,10 +4,13 @@
 
 point cloud representations and movements
 
-# setup
+# quick setup
 
 ```Bash
 sudo apt-get -y install python-pygame
+git clone https://github.com/wdbm/yutu.git
+cd yutu
+python example_1.py
 ```
 
 # future
