@@ -1,5 +1,7 @@
 # yutu
 
+![](bunny.png)
+
 point cloud representations and movements
 
 # future
