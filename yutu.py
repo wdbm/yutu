@@ -33,7 +33,7 @@
 """
 
 name    = "yutu"
-version = "2015-02-09T1118Z"
+version = "2015-02-09T1357Z"
 
 import sys
 import math
@@ -57,17 +57,47 @@ def listPercentage(
     # elements of an input list.
     return listFull[::int(100.0/percentage)]
 
-class Point3D:
+def clamp(x): 
+    return(max(0, min(x, 255)))
+
+def RGB_to_HEX(RGB_tuple):
+    # This function returns a HEX string given an RGB tuple.
+    r = RGB_tuple[0]
+    g = RGB_tuple[1]
+    b = RGB_tuple[2]
+    return("#{0:02x}{1:02x}{2:02x}".format(clamp(r), clamp(g), clamp(b)))
+
+def HEX_to_RGB(HEX_string):
+    # This function returns an RGB tuple given a HEX string.
+    HEX = HEX_string.lstrip('#')
+    HEX_length = len(HEX)
+    return(
+        tuple(
+            int(HEX[i:i + HEX_length // 3], 16) for i in range(
+                0,
+                HEX_length,
+                HEX_length // 3
+            )
+        )
+    )
+
+class P:
 
     def __init__(
         self,
-        x = 0,
-        y = 0,
-        z = 0
+        x           = 0,
+        y           = 0,
+        z           = 0,
+        color       = "#ffffff",
+        sizeX       = 1,
+        sizeY       = 1
         ):
-        self.x = float(x)
-        self.y = float(y)
-        self.z = float(z)
+        self.x      = float(x)
+        self.y      = float(y)
+        self.z      = float(z)
+        self._color = color
+        self._sizeX = sizeX
+        self._sizeY = sizeY
  
     def rotate(
         self,
@@ -87,7 +117,7 @@ class Point3D:
         xzyx = xyx  * Cos(angleZ) - yyx    * Sin(angleZ)
         yzyx = xyx  * Sin(angleZ) + yyx    * Cos(angleZ)
         zzyx = zyx
-        return(Point3D(xzyx, yzyx, zzyx))
+        return(P(xzyx, yzyx, zzyx))
  
     def translate(
         self,
@@ -98,7 +128,7 @@ class Point3D:
         x = self.x + displacementX
         y = self.y + displacementY
         z = self.z + displacementZ
-        return(Point3D(x, y, z))
+        return(P(x, y, z))
  
     def project(
         self,
@@ -111,7 +141,27 @@ class Point3D:
         factor = field_of_view / (viewer_distance + self.z)
         x      =  self.x * factor + window_width / 2
         y      = -self.y * factor + window_height / 2
-        return(Point3D(x, y, 1))
+        return(P(x, y, 1))
+
+    def colorHEX(
+        self
+        ):
+        return(self._color)
+
+    def colorRGB(
+        self
+        ):
+        return(HEX_to_RGB(self._color))
+
+    def sizeX(
+        self
+        ):
+        return(self._sizeX)
+
+    def sizeY(
+        self
+        ):
+        return(self._sizeY)
 
 class Visualisation3D:
 
@@ -171,7 +221,10 @@ class Visualisation3D:
                 # Round the 2D point for display.
                 x = int(point2D.x)
                 y = int(point2D.y)
-                self.display.fill((255, 255, 255), (x, y, 1, 1))
+                self.display.fill(
+                    point.colorRGB(),
+                    (x, y, point.sizeX(), point.sizeY())
+                )
             self.angleX += angle_change_rate
             self.angleY += angle_change_rate
             self.angleZ += angle_change_rate
@@ -250,5 +303,8 @@ class Visualisation3D:
                 # Round the 2D point for display.
                 x = int(point2D.x)
                 y = int(point2D.y)
-                self.display.fill((255, 255, 255), (x, y, 1, 1))
+                self.display.fill(
+                    point.colorRGB(),
+                    (x, y, point.sizeX(), point.sizeY())
+                )
             pygame.display.flip()
