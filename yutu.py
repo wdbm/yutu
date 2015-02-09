@@ -33,10 +33,11 @@
 """
 
 name    = "yutu"
-version = "2015-02-09T1357Z"
+version = "2015-02-09T2111Z"
 
 import sys
 import math
+import csv
 import pygame
 from   pygame.locals import *
 
@@ -89,15 +90,20 @@ class P:
         y           = 0,
         z           = 0,
         color       = "#ffffff",
-        sizeX       = 1,
-        sizeY       = 1
+        sizeX       = None,
+        sizeY       = None,
+        size        = 1
         ):
         self.x      = float(x)
         self.y      = float(y)
         self.z      = float(z)
         self._color = color
-        self._sizeX = sizeX
-        self._sizeY = sizeY
+        if sizeX is None and sizeY is None:
+            self._sizeX = size
+            self._sizeY = size
+        else:
+            self._sizeX = sizeX
+            self._sizeY = sizeY
  
     def rotate(
         self,
@@ -137,10 +143,15 @@ class P:
         field_of_view   = None,
         viewer_distance = None
         ):
+        # convert viewer distance to float
+        viewer_distance = float(viewer_distance)
         # generate 2D perspective projection of point
-        factor = field_of_view / (viewer_distance + self.z)
-        x      =  self.x * factor + window_width / 2
-        y      = -self.y * factor + window_height / 2
+        if viewer_distance != -self.z:
+            factor = field_of_view / (viewer_distance + self.z)
+        else:
+            factor = 50000000
+        x =  self.x * factor + window_width / 2
+        y = -self.y * factor + window_height / 2
         return(P(x, y, 1))
 
     def colorHEX(
@@ -162,6 +173,30 @@ class P:
         self
         ):
         return(self._sizeY)
+
+def load_yutu_file(
+    fileName   = None,
+    percentage = 100
+    ):
+    points = []
+    nmation = int(100.0/percentage)
+    lineNumber = 1
+    for line in csv.reader(
+        open(fileName),
+        delimiter = " ",
+        skipinitialspace = True
+        ):
+        if line and lineNumber % nmation == 0:
+            x = line[0]
+            y = line[1]
+            z = line[2]
+            r = int(line[3])
+            g = int(line[4])
+            b = int(line[5])
+            point = P(x, y, z, color = RGB_to_HEX((r, g, b)), size = 1)
+            points.append(point)
+        lineNumber += 1
+    return(points)
 
 class Visualisation3D:
 
