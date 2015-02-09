@@ -37134,9 +37134,11 @@ def main():
     ]
 
     yutu.Visualisation3D(
-        points = bunny
+        points     = bunny,
+        percentage = 5
     ).run_control_rigid_body_motions(
-        viewer_distance = 0.15
+        viewer_distance = 0.15,
+        displacement_change_rate = 0.08,
     )
 
 if __name__ == "__main__":

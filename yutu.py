@@ -33,7 +33,7 @@
 """
 
 name    = "yutu"
-version = "2015-02-08T1935Z"
+version = "2015-02-09T1118Z"
 
 import sys
 import math
@@ -48,6 +48,14 @@ def Cos(angleInDegrees):
 
 def Sin(angleInDegrees):
     return(math.sin(radians(angleInDegrees)))
+
+def listPercentage(
+    listFull   = None,
+    percentage = None
+    ):
+    # This function returns a list that is a percentage of evenly-distributed
+    # elements of an input list.
+    return listFull[::int(100.0/percentage)]
 
 class Point3D:
 
@@ -112,9 +120,16 @@ class Visualisation3D:
         window_width  = 1280,
         window_height = 960,
         caption       = "points visualisation",
-        points        = None
+        points        = None,
+        percentage    = 100
         ):
-        self.points   = points
+        if percentage is not 100:
+            self.points = listPercentage(
+                listFull   = points,
+                percentage = percentage
+            )
+        else:
+            self.points = points
         pygame.init()
         self.display = pygame.display.set_mode((window_width, window_height))
         pygame.display.set_caption(caption)
@@ -156,7 +171,7 @@ class Visualisation3D:
                 # Round the 2D point for display.
                 x = int(point2D.x)
                 y = int(point2D.y)
-                self.display.fill((255, 255, 255), (x, y, 2, 2))
+                self.display.fill((255, 255, 255), (x, y, 1, 1))
             self.angleX += angle_change_rate
             self.angleY += angle_change_rate
             self.angleZ += angle_change_rate
@@ -209,6 +224,9 @@ class Visualisation3D:
             self.clock.tick(frame_rate)
             self.display.fill((0, 0, 0))
             # Move all points.
+            k = 60
+            count = 0
+            count1 = 0
             for point in self.points:
                 # Rotate the point around the x-axis, the y-axis and the z-axis.
                 p_prime = point.rotate(
@@ -232,5 +250,5 @@ class Visualisation3D:
                 # Round the 2D point for display.
                 x = int(point2D.x)
                 y = int(point2D.y)
-                self.display.fill((255, 255, 255), (x, y, 2, 2))
+                self.display.fill((255, 255, 255), (x, y, 1, 1))
             pygame.display.flip()
