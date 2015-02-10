@@ -33,7 +33,7 @@
 """
 
 name    = "yutu"
-version = "2015-02-10T1416Z"
+version = "2015-02-10T1514Z"
 
 import sys
 import math
@@ -358,6 +358,9 @@ class Visualisation3D:
                     sys.exit()
                 elif event.type == KEYDOWN and event.key == K_ESCAPE:
                     sys.exit()
+            keys = pygame.key.get_pressed()
+            if keys[K_F11]:
+                pygame.display.toggle_fullscreen()
             self.clock.tick(frame_rate)
             self.display.fill((0, 0, 0))
             # Move all points.
@@ -451,6 +454,8 @@ class Visualisation3D:
                 self.displacementY += displacement_change_rate
             if keys[K_l]:
                 self.displacementY += -displacement_change_rate
+            if keys[K_F11]:
+                pygame.display.toggle_fullscreen()
             self.clock.tick(frame_rate)
             self.display.fill((0, 0, 0))
             # Move all points.
