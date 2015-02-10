@@ -33,7 +33,7 @@
 """
 
 name    = "yutu"
-version = "2015-02-09T2111Z"
+version = "2015-02-10T0927Z"
 
 import sys
 import math
@@ -223,13 +223,22 @@ class Visualisation3D:
  
     def run_rotation(
         self,
-        viewer_distance   = 4,
-        angle_change_rate = 1,
-        frame_rate        = 50
+        viewer_distance    = 4,
+        angle_change_rate  = 1,
+        frame_rate         = 50,
+        angleX             = 0,
+        angleY             = 0,
+        angleZ             = 0,
+        displacementX      = 0,
+        displacementY      = 0,
+        displacementZ      = 0
         ):
-        self.angleX       = 0
-        self.angleY       = 0
-        self.angleZ       = 0
+        self.angleX        = angleX
+        self.angleY        = angleY
+        self.angleZ        = angleZ
+        self.displacementX = displacementX
+        self.displacementY = displacementY
+        self.displacementZ = displacementZ
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -270,14 +279,20 @@ class Visualisation3D:
         viewer_distance          = 4,
         angle_change_rate        = 2,
         displacement_change_rate = 0.2,
-        frame_rate               = 50
+        frame_rate               = 50,
+        angleX                   = 0,
+        angleY                   = 0,
+        angleZ                   = 0,
+        displacementX            = 0,
+        displacementY            = 0,
+        displacementZ            = 0
         ):
-        self.angleX              = 0
-        self.angleY              = 0
-        self.angleZ              = 0
-        self.displacementX       = 0
-        self.displacementY       = 0
-        self.displacementZ       = 0
+        self.angleX              = angleX
+        self.angleY              = angleY
+        self.angleZ              = angleZ
+        self.displacementX       = displacementX
+        self.displacementY       = displacementY
+        self.displacementZ       = displacementZ
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
