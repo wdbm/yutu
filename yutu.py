@@ -33,7 +33,7 @@
 """
 
 name    = "yutu"
-version = "2015-02-10T0927Z"
+version = "2015-02-10T1416Z"
 
 import sys
 import math
@@ -81,6 +81,117 @@ def HEX_to_RGB(HEX_string):
             )
         )
     )
+
+class TextRectException:
+    def __init__(self, message = None):
+        self.message = message
+    def __str__(self):
+        return self.message
+
+def textBox(
+    text            = None,
+    font            = None,            # pygame.Font
+    rect            = None,            # pygame.Rect
+    textColor       = (255, 255, 255), # RGB tuple
+    backgroundColor = (0, 0, 0),       # RGB tuple
+    justification   = 0                # 0 (default): left, 1: center, 2: right
+    ):
+    # This function returns a surface containing specified text, anti-aliased
+    # and reformatted to fit within the rectangle, word-wrapping as necessary.
+    finalLines = []
+    requestedLines = text.splitlines()
+    # Create a series of lines to fit in the provided rectangle.
+    for requestedLine in requestedLines:
+        if font.size(requestedLine)[0] > rect.width:
+            words = requestedLine.split(' ')
+            # If any of the words are too long to fit, return.
+            for word in words:
+                if font.size(word)[0] >= rect.width:
+                    # word too long to fit in rect specified
+                    raise(Exception)
+            # Start a new line.
+            accumulatedLine = ""
+            for word in words:
+                testLine = accumulatedLine + word + " "
+                # Build the line while the words fit.    
+                if font.size(testLine)[0] < rect.width:
+                    accumulatedLine = testLine
+                else:
+                    finalLines.append(accumulatedLine)
+                    accumulatedLine = word + " "
+            finalLines.append(accumulatedLine)
+        else:
+            finalLines.append(requestedLine)
+    # Attempt to write the text to the surface.
+    surface = pygame.Surface(rect.size)
+    surface.fill(backgroundColor)
+    accumulatedHeight = 0
+    for line in finalLines:
+        if accumulatedHeight + font.size(line)[1] >= rect.height:
+            # once word-wrapped, text too tall to fit in rect specified
+            raise(Exception)
+        if line != "":
+            temporarySurface = font.render(line, 1, textColor)
+            if justification == 0:
+                surface.blit(
+                    temporarySurface,
+                    (0, accumulatedHeight)
+                )
+            elif justification == 1:
+                surface.blit(
+                    temporarySurface,
+                    ((rect.width - temporarySurface.get_width()) / 2,
+                    accumulatedHeight)
+                )
+            elif justification == 2:
+                surface.blit(
+                    temporarySurface,
+                    (rect.width - temporarySurface.get_width(),
+                    accumulatedHeight)
+                )
+            else:
+                # invalid justification specified
+                raise(Excepton)
+        accumulatedHeight += font.size(line)[1]
+    return(surface)
+
+def geometryStatusTextBox(
+    angleX            = None,
+    angleY            = None,
+    angleZ            = None,
+    displacementX     = None,
+    displacementY     = None,
+    displacementZ     = None,
+    font              = None,
+    x1                = 0,
+    y1                = 0,
+    x2                = 300,
+    y2                = 127
+    ):
+    _geometryStatus = "angles:         x: {angleX}\n"        + \
+                      "                y: {angleY}\n"        + \
+                      "                z: {angleZ}\n\n"      + \
+                      "displacement:   x: {displacementX}\n" + \
+                      "                y: {displacementY}\n" + \
+                      "                z: {displacementZ}\n"
+    geometryStatus = _geometryStatus.format(
+        angleX            = angleX,
+        angleY            = angleY,
+        angleZ            = angleZ,
+        displacementX     = displacementX,
+        displacementY     = displacementY,
+        displacementZ     = displacementZ
+    )
+    rect = pygame.Rect((x1, y1, x2, y2))
+    geometryStatusTextBox = textBox(
+        text            = geometryStatus,
+        font            = font,
+        rect            = rect,
+        textColor       = (255, 255, 255),
+        backgroundColor = (0, 85, 160),
+        justification   = 0
+        )
+    return(geometryStatusTextBox)
 
 class P:
 
@@ -202,11 +313,11 @@ class Visualisation3D:
 
     def __init__(
         self,
-        window_width  = 1280,
-        window_height = 960,
-        caption       = "points visualisation",
-        points        = None,
-        percentage    = 100
+        window_width   = 1280,
+        window_height  = 960,
+        caption        = "points visualisation",
+        points         = None,
+        percentage     = 100
         ):
         if percentage is not 100:
             self.points = listPercentage(
@@ -220,6 +331,7 @@ class Visualisation3D:
         pygame.display.set_caption(caption)
         self.clock = pygame.time.Clock()
         pygame.key.set_repeat(10, 10)
+        self.font = pygame.font.SysFont("monospace", 15)
  
     def run_rotation(
         self,
@@ -231,7 +343,8 @@ class Visualisation3D:
         angleZ             = 0,
         displacementX      = 0,
         displacementY      = 0,
-        displacementZ      = 0
+        displacementZ      = 0,
+        geometryStatus     = True
         ):
         self.angleX        = angleX
         self.angleY        = angleY
@@ -272,6 +385,19 @@ class Visualisation3D:
             self.angleX += angle_change_rate
             self.angleY += angle_change_rate
             self.angleZ += angle_change_rate
+            if geometryStatus is True:
+                self.display.blit(
+                    geometryStatusTextBox(
+                        angleX            = self.angleX,
+                        angleY            = self.angleY,
+                        angleZ            = self.angleZ,
+                        displacementX     = self.displacementX,
+                        displacementY     = self.displacementY,
+                        displacementZ     = self.displacementZ,
+                        font              = self.font
+                    ),
+                    (0, 0)
+                )
             pygame.display.flip()
 
     def run_control_rigid_body_motions(
@@ -285,7 +411,8 @@ class Visualisation3D:
         angleZ                   = 0,
         displacementX            = 0,
         displacementY            = 0,
-        displacementZ            = 0
+        displacementZ            = 0,
+        geometryStatus           = True
         ):
         self.angleX              = angleX
         self.angleY              = angleY
@@ -327,9 +454,6 @@ class Visualisation3D:
             self.clock.tick(frame_rate)
             self.display.fill((0, 0, 0))
             # Move all points.
-            k = 60
-            count = 0
-            count1 = 0
             for point in self.points:
                 # Rotate the point around the x-axis, the y-axis and the z-axis.
                 p_prime = point.rotate(
@@ -356,5 +480,18 @@ class Visualisation3D:
                 self.display.fill(
                     point.colorRGB(),
                     (x, y, point.sizeX(), point.sizeY())
+                )
+            if geometryStatus is True:
+                self.display.blit(
+                    geometryStatusTextBox(
+                        angleX            = self.angleX,
+                        angleY            = self.angleY,
+                        angleZ            = self.angleZ,
+                        displacementX     = self.displacementX,
+                        displacementY     = self.displacementY,
+                        displacementZ     = self.displacementZ,
+                        font              = self.font
+                    ),
+                    (0, 0)
                 )
             pygame.display.flip()
