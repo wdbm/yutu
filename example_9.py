@@ -35,6 +35,13 @@ def main():
         parent = view.scene
     )
 
+    print("flying camera:")
+    print("- move:  WASD or arrows")
+    print("- brake: space")
+    print("- up:    F")
+    print("- down:  C")
+    print("- look:  IJKL")
+
     vispy.app.run()
 
 if __name__ == "__main__":
