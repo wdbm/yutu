@@ -7,6 +7,12 @@ point cloud representations and movements
 # quick setup
 
 ```Bash
+git clone https://github.com/vispy/vispy.git
+cd vispy
+sudo python setup.py install
+```
+
+```Bash
 sudo apt-get -y install python-pygame
 git clone https://github.com/wdbm/yutu.git
 cd yutu
