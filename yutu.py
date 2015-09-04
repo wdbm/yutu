@@ -33,7 +33,7 @@
 """
 
 name    = "yutu"
-version = "2015-02-10T1514Z"
+version = "2015-09-04T1456Z"
 
 import sys
 import math
@@ -308,6 +308,15 @@ def load_yutu_file(
             points.append(point)
         lineNumber += 1
     return(points)
+
+def P_to_NumPyArray(
+    points = None
+    ):
+    numberOfPoints = len(points)
+    array = numpy.zeros(shape = (numberOfPoints, 3))
+    for index, point in enumerate(points):
+        array[index] = [point.x, point.y, point.z]
+    return array
 
 class Visualisation3D:
 
