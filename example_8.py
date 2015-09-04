@@ -62,7 +62,7 @@ def main():
     # Create a scatter object and set the data.
     scatter = visuals.Markers()
     scatter.set_data(
-        P_to_NumPyArray(cube),
+        yutu.P_to_NumPyArray(cube),
         edge_color = None,
         face_color = (1, 1, 1, .5),
         size = 5

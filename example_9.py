@@ -12,32 +12,15 @@ def main():
     )
     view = canvas.central_widget.add_view()
 
-    # Generate data.
-    points = numpy.random.normal(
-        size = (100000, 3),
-        scale = 0.1
+    points = yutu.load_yutu_file(
+        "scan000.3d",
+        percentage = 100
     )
 
-    # Make the data appear more interesting.
-    centers = numpy.random.normal(
-        size=(50, 3)
-    )
-    indices = numpy.random.normal(
-        size  = 100000,
-        loc   = centers.shape[0]/2.,
-        scale = centers.shape[0]/3.
-    )
-    indices = numpy.clip(indices, 0, centers.shape[0] - 1).astype(int)
-    scales = 10 ** (
-        numpy.linspace(-2, 0.5, centers.shape[0])
-    )[indices][:, numpy.newaxis]
-    points *= scales
-    points += centers[indices]
-    
     # Create a scatter object and set the data.
     scatter = visuals.Markers()
     scatter.set_data(
-        points,
+        yutu.P_to_NumPyArray(points),
         edge_color = None,
         face_color = (1, 1, 1, .5),
         size = 5
@@ -45,7 +28,7 @@ def main():
 
     view.add(scatter)
 
-    view.camera = "turntable"  # "arcball"
+    view.camera = "fly"
 
     # Add a 3D color axis for orientation.
     axis = visuals.XYZAxis(

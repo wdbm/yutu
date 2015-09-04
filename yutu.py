@@ -37,6 +37,7 @@ version = "2015-09-04T1456Z"
 
 import sys
 import math
+import numpy
 import csv
 import pygame
 from   pygame.locals import *
