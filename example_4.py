@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from yutu import *
 import csv
 

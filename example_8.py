@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import yutu
 import numpy
 import vispy.scene

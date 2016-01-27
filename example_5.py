@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from yutu import *
 import csv
 
@@ -11,12 +13,12 @@ def main():
     Visualisation3D(points = points).run_control_rigid_body_motions(
         viewer_distance          = 100,
         displacement_change_rate = 20,
-        angleX                   = -84,
-        angleY                   = 28,
-        angleZ                   = -90,
-        displacementX            = 0,
-        displacementY            = 0,
-        displacementZ            = 300
+        angle_x                  = -84,
+        angle_y                  = 28,
+        angle_z                  = -90,
+        displacement_x           = 0,
+        displacement_y           = 0,
+        displacement_z           = 300
     )
 
 if __name__ == "__main__":

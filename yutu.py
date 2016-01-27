@@ -33,7 +33,7 @@
 """
 
 name    = "yutu"
-version = "2015-09-04T1456Z"
+version = "2016-01-27T1252Z"
 
 import sys
 import math
@@ -45,19 +45,19 @@ from   pygame.locals import *
 def radians(degrees):
     return(degrees * math.pi / 180)
 
-def Cos(angleInDegrees):
-    return(math.cos(radians(angleInDegrees)))
+def Cos(angle_in_degrees):
+    return(math.cos(radians(angle_in_degrees)))
 
-def Sin(angleInDegrees):
-    return(math.sin(radians(angleInDegrees)))
+def Sin(angle_in_degrees):
+    return(math.sin(radians(angle_in_degrees)))
 
-def listPercentage(
-    listFull   = None,
+def list_percentage(
+    list_full  = None,
     percentage = None
     ):
     # This function returns a list that is a percentage of evenly-distributed
     # elements of an input list.
-    return listFull[::int(100.0/percentage)]
+    return list_full[::int(100.0/percentage)]
 
 def clamp(x): 
     return(max(0, min(x, 255)))
@@ -89,110 +89,110 @@ class TextRectException:
     def __str__(self):
         return self.message
 
-def textBox(
-    text            = None,
-    font            = None,            # pygame.Font
-    rect            = None,            # pygame.Rect
-    textColor       = (255, 255, 255), # RGB tuple
-    backgroundColor = (0, 0, 0),       # RGB tuple
-    justification   = 0                # 0 (default): left, 1: center, 2: right
+def text_box(
+    text             = None,
+    font             = None,            # pygame.Font
+    rect             = None,            # pygame.Rect
+    text_color       = (255, 255, 255), # RGB tuple
+    background_color = (0, 0, 0),       # RGB tuple
+    justification    = 0                # 0 (default): left, 1: center, 2: right
     ):
     # This function returns a surface containing specified text, anti-aliased
     # and reformatted to fit within the rectangle, word-wrapping as necessary.
-    finalLines = []
-    requestedLines = text.splitlines()
+    final_lines = []
+    requested_lines = text.splitlines()
     # Create a series of lines to fit in the provided rectangle.
-    for requestedLine in requestedLines:
-        if font.size(requestedLine)[0] > rect.width:
-            words = requestedLine.split(' ')
+    for requested_line in requested_lines:
+        if font.size(requested_line)[0] > rect.width:
+            words = requested_line.split(' ')
             # If any of the words are too long to fit, return.
             for word in words:
                 if font.size(word)[0] >= rect.width:
                     # word too long to fit in rect specified
                     raise(Exception)
             # Start a new line.
-            accumulatedLine = ""
+            accumulated_line = ""
             for word in words:
-                testLine = accumulatedLine + word + " "
+                test_line = accumulated_line + word + " "
                 # Build the line while the words fit.    
-                if font.size(testLine)[0] < rect.width:
-                    accumulatedLine = testLine
+                if font.size(test_line)[0] < rect.width:
+                    accumulated_line = test_line
                 else:
-                    finalLines.append(accumulatedLine)
-                    accumulatedLine = word + " "
-            finalLines.append(accumulatedLine)
+                    final_lines.append(accumulated_line)
+                    accumulated_line = word + " "
+            final_lines.append(accumulated_line)
         else:
-            finalLines.append(requestedLine)
+            final_lines.append(requested_line)
     # Attempt to write the text to the surface.
     surface = pygame.Surface(rect.size)
-    surface.fill(backgroundColor)
-    accumulatedHeight = 0
-    for line in finalLines:
-        if accumulatedHeight + font.size(line)[1] >= rect.height:
+    surface.fill(background_color)
+    accumulated_height = 0
+    for line in final_lines:
+        if accumulated_height + font.size(line)[1] >= rect.height:
             # once word-wrapped, text too tall to fit in rect specified
             raise(Exception)
         if line != "":
-            temporarySurface = font.render(line, 1, textColor)
+            temporary_surface = font.render(line, 1, text_color)
             if justification == 0:
                 surface.blit(
-                    temporarySurface,
-                    (0, accumulatedHeight)
+                    temporary_surface,
+                    (0, accumulated_height)
                 )
             elif justification == 1:
                 surface.blit(
-                    temporarySurface,
-                    ((rect.width - temporarySurface.get_width()) / 2,
-                    accumulatedHeight)
+                    temporary_surface,
+                    ((rect.width - temporary_surface.get_width()) / 2,
+                    accumulated_height)
                 )
             elif justification == 2:
                 surface.blit(
-                    temporarySurface,
-                    (rect.width - temporarySurface.get_width(),
-                    accumulatedHeight)
+                    temporary_surface,
+                    (rect.width - temporary_surface.get_width(),
+                    accumulated_height)
                 )
             else:
                 # invalid justification specified
                 raise(Excepton)
-        accumulatedHeight += font.size(line)[1]
+        accumulated_height += font.size(line)[1]
     return(surface)
 
-def geometryStatusTextBox(
-    angleX            = None,
-    angleY            = None,
-    angleZ            = None,
-    displacementX     = None,
-    displacementY     = None,
-    displacementZ     = None,
+def geometry_status_text_box(
+    angle_x            = None,
+    angle_y            = None,
+    angle_z            = None,
+    displacement_x     = None,
+    displacement_y     = None,
+    displacement_z     = None,
     font              = None,
     x1                = 0,
     y1                = 0,
     x2                = 300,
     y2                = 127
     ):
-    _geometryStatus = "angles:         x: {angleX}\n"        + \
-                      "                y: {angleY}\n"        + \
-                      "                z: {angleZ}\n\n"      + \
-                      "displacement:   x: {displacementX}\n" + \
-                      "                y: {displacementY}\n" + \
-                      "                z: {displacementZ}\n"
-    geometryStatus = _geometryStatus.format(
-        angleX            = angleX,
-        angleY            = angleY,
-        angleZ            = angleZ,
-        displacementX     = displacementX,
-        displacementY     = displacementY,
-        displacementZ     = displacementZ
+    _geometry_status = "angles:         x: {angle_x}\n"        + \
+                       "                y: {angle_y}\n"        + \
+                       "                z: {angle_z}\n\n"      + \
+                       "displacement:   x: {displacement_x}\n" + \
+                       "                y: {displacement_y}\n" + \
+                       "                z: {displacement_z}\n"
+    geometry_status = _geometry_status.format(
+        angle_x            = angle_x,
+        angle_y            = angle_y,
+        angle_z            = angle_z,
+        displacement_x     = displacement_x,
+        displacement_y     = displacement_y,
+        displacement_z     = displacement_z
     )
     rect = pygame.Rect((x1, y1, x2, y2))
-    geometryStatusTextBox = textBox(
-        text            = geometryStatus,
-        font            = font,
-        rect            = rect,
-        textColor       = (255, 255, 255),
-        backgroundColor = (0, 85, 160),
-        justification   = 0
+    geometry_status_text_box = text_box(
+        text             = geometry_status,
+        font             = font,
+        rect             = rect,
+        text_color       = (255, 255, 255),
+        background_color = (0, 85, 160),
+        justification    = 0
         )
-    return(geometryStatusTextBox)
+    return(geometry_status_text_box)
 
 class P:
 
@@ -202,50 +202,50 @@ class P:
         y           = 0,
         z           = 0,
         color       = "#ffffff",
-        sizeX       = None,
-        sizeY       = None,
+        size_x      = None,
+        size_y      = None,
         size        = 1
         ):
         self.x      = float(x)
         self.y      = float(y)
         self.z      = float(z)
         self._color = color
-        if sizeX is None and sizeY is None:
-            self._sizeX = size
-            self._sizeY = size
+        if size_x is None and size_y is None:
+            self._size_x = size
+            self._size_y = size
         else:
-            self._sizeX = sizeX
-            self._sizeY = sizeY
+            self._size_x = size_x
+            self._size_y = size_y
  
     def rotate(
         self,
-        angleX = 0,
-        angleY = 0,
-        angleZ = 0
+        angle_x = 0,
+        angle_y = 0,
+        angle_z = 0
         ):
         # rotation around x-axis
         xx = self.x
-        yx = self.y * Cos(angleX) - self.z * Sin(angleX)
-        zx = self.y * Sin(angleX) + self.z * Cos(angleX)
+        yx = self.y * Cos(angle_x) - self.z * Sin(angle_x)
+        zx = self.y * Sin(angle_x) + self.z * Cos(angle_x)
         # rotation around y-axis
-        xyx = zx    * Sin(angleY) + xx     * Cos(angleY)
+        xyx = zx    * Sin(angle_y) + xx     * Cos(angle_y)
         yyx = yx
-        zyx = zx    * Cos(angleY) - xx     * Sin(angleY)
+        zyx = zx    * Cos(angle_y) - xx     * Sin(angle_y)
         # rotation around z-axis
-        xzyx = xyx  * Cos(angleZ) - yyx    * Sin(angleZ)
-        yzyx = xyx  * Sin(angleZ) + yyx    * Cos(angleZ)
+        xzyx = xyx  * Cos(angle_z) - yyx    * Sin(angle_z)
+        yzyx = xyx  * Sin(angle_z) + yyx    * Cos(angle_z)
         zzyx = zyx
         return(P(xzyx, yzyx, zzyx))
  
     def translate(
         self,
-        displacementX = 0,
-        displacementY = 0,
-        displacementZ = 0
+        displacement_x = 0,
+        displacement_y = 0,
+        displacement_z = 0
         ):
-        x = self.x + displacementX
-        y = self.y + displacementY
-        z = self.z + displacementZ
+        x = self.x + displacement_x
+        y = self.y + displacement_y
+        z = self.z + displacement_z
         return(P(x, y, z))
  
     def project(
@@ -266,39 +266,39 @@ class P:
         y = -self.y * factor + window_height / 2
         return(P(x, y, 1))
 
-    def colorHEX(
+    def color_HEX(
         self
         ):
         return(self._color)
 
-    def colorRGB(
+    def color_RGB(
         self
         ):
         return(HEX_to_RGB(self._color))
 
-    def sizeX(
+    def size_x(
         self
         ):
-        return(self._sizeX)
+        return(self._size_x)
 
-    def sizeY(
+    def size_y(
         self
         ):
-        return(self._sizeY)
+        return(self._size_y)
 
 def load_yutu_file(
-    fileName   = None,
+    filename   = None,
     percentage = 100
     ):
     points = []
     nmation = int(100.0/percentage)
-    lineNumber = 1
+    line_number = 1
     for line in csv.reader(
-        open(fileName),
+        open(filename),
         delimiter = " ",
         skipinitialspace = True
         ):
-        if line and lineNumber % nmation == 0:
+        if line and line_number % nmation == 0:
             x = line[0]
             y = line[1]
             z = line[2]
@@ -307,14 +307,14 @@ def load_yutu_file(
             b = int(line[5])
             point = P(x, y, z, color = RGB_to_HEX((r, g, b)), size = 1)
             points.append(point)
-        lineNumber += 1
+        line_number += 1
     return(points)
 
 def P_to_NumPyArray(
     points = None
     ):
-    numberOfPoints = len(points)
-    array = numpy.zeros(shape = (numberOfPoints, 3))
+    number_of_points = len(points)
+    array = numpy.zeros(shape = (number_of_points, 3))
     for index, point in enumerate(points):
         array[index] = [point.x, point.y, point.z]
     return array
@@ -330,8 +330,8 @@ class Visualisation3D:
         percentage     = 100
         ):
         if percentage is not 100:
-            self.points = listPercentage(
-                listFull   = points,
+            self.points = list_percentage(
+                list_full  = points,
                 percentage = percentage
             )
         else:
@@ -345,23 +345,23 @@ class Visualisation3D:
  
     def run_rotation(
         self,
-        viewer_distance    = 4,
-        angle_change_rate  = 1,
-        frame_rate         = 50,
-        angleX             = 0,
-        angleY             = 0,
-        angleZ             = 0,
-        displacementX      = 0,
-        displacementY      = 0,
-        displacementZ      = 0,
-        geometryStatus     = True
+        viewer_distance     = 4,
+        angle_change_rate   = 1,
+        frame_rate          = 50,
+        angle_x             = 0,
+        angle_y             = 0,
+        angle_z             = 0,
+        displacement_x      = 0,
+        displacement_y      = 0,
+        displacement_z      = 0,
+        geometry_status     = True
         ):
-        self.angleX        = angleX
-        self.angleY        = angleY
-        self.angleZ        = angleZ
-        self.displacementX = displacementX
-        self.displacementY = displacementY
-        self.displacementZ = displacementZ
+        self.angle_x        = angle_x
+        self.angle_y        = angle_y
+        self.angle_z        = angle_z
+        self.displacement_x = displacement_x
+        self.displacement_y = displacement_y
+        self.displacement_z = displacement_z
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -377,36 +377,36 @@ class Visualisation3D:
             for point in self.points:
                 # Rotate the point around the x-axis, the y-axis and the z-axis.
                 p_prime = point.rotate(
-                    angleX = self.angleX,
-                    angleY = self.angleY,
-                    angleZ = self.angleZ
+                    angle_x = self.angle_x,
+                    angle_y = self.angle_y,
+                    angle_z = self.angle_z
                 )
                 # Project the 3D point to 2D.
-                point2D = p_prime.project(
+                point_2D = p_prime.project(
                     window_width    = self.display.get_width(),
                     window_height   = self.display.get_height(),
                     field_of_view   = 256,
                     viewer_distance = viewer_distance
                 )
                 # Round the 2D point for display.
-                x = int(point2D.x)
-                y = int(point2D.y)
+                x = int(point_2D.x)
+                y = int(point_2D.y)
                 self.display.fill(
-                    point.colorRGB(),
-                    (x, y, point.sizeX(), point.sizeY())
+                    point.color_RGB(),
+                    (x, y, point.size_x(), point.size_y())
                 )
-            self.angleX += angle_change_rate
-            self.angleY += angle_change_rate
-            self.angleZ += angle_change_rate
-            if geometryStatus is True:
+            self.angle_x += angle_change_rate
+            self.angle_y += angle_change_rate
+            self.angle_z += angle_change_rate
+            if geometry_status is True:
                 self.display.blit(
-                    geometryStatusTextBox(
-                        angleX            = self.angleX,
-                        angleY            = self.angleY,
-                        angleZ            = self.angleZ,
-                        displacementX     = self.displacementX,
-                        displacementY     = self.displacementY,
-                        displacementZ     = self.displacementZ,
+                    geometry_status_text_box(
+                        angle_x            = self.angle_x,
+                        angle_y            = self.angle_y,
+                        angle_z            = self.angle_z,
+                        displacement_x     = self.displacement_x,
+                        displacement_y     = self.displacement_y,
+                        displacement_z     = self.displacement_z,
                         font              = self.font
                     ),
                     (0, 0)
@@ -419,20 +419,20 @@ class Visualisation3D:
         angle_change_rate        = 2,
         displacement_change_rate = 0.2,
         frame_rate               = 50,
-        angleX                   = 0,
-        angleY                   = 0,
-        angleZ                   = 0,
-        displacementX            = 0,
-        displacementY            = 0,
-        displacementZ            = 0,
-        geometryStatus           = True
+        angle_x                  = 0,
+        angle_y                  = 0,
+        angle_z                  = 0,
+        displacement_x           = 0,
+        displacement_y           = 0,
+        displacement_z           = 0,
+        geometry_status          = True
         ):
-        self.angleX              = angleX
-        self.angleY              = angleY
-        self.angleZ              = angleZ
-        self.displacementX       = displacementX
-        self.displacementY       = displacementY
-        self.displacementZ       = displacementZ
+        self.angle_x             = angle_x
+        self.angle_y             = angle_y
+        self.angle_z             = angle_z
+        self.displacement_x      = displacement_x
+        self.displacement_y      = displacement_y
+        self.displacement_z      = displacement_z
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -441,29 +441,29 @@ class Visualisation3D:
                     sys.exit()
             keys = pygame.key.get_pressed()
             if keys[K_w]:
-                self.angleX        += angle_change_rate
+                self.angle_x        += angle_change_rate
             if keys[K_s]:
-                self.angleX        += -angle_change_rate
+                self.angle_x        += -angle_change_rate
             if keys[K_d]:
-                self.angleY        += -angle_change_rate
+                self.angle_y        += -angle_change_rate
             if keys[K_a]:
-                self.angleY        += angle_change_rate
+                self.angle_y        += angle_change_rate
             if keys[K_q]:
-                self.angleZ        += angle_change_rate
+                self.angle_z        += angle_change_rate
             if keys[K_e]:
-                self.angleZ        += -angle_change_rate
+                self.angle_z        += -angle_change_rate
             if keys[K_UP]:
-                self.displacementZ += displacement_change_rate
+                self.displacement_z += displacement_change_rate
             if keys[K_DOWN]:
-                self.displacementZ += -displacement_change_rate
+                self.displacement_z += -displacement_change_rate
             if keys[K_RIGHT]:
-                self.displacementX += displacement_change_rate
+                self.displacement_x += displacement_change_rate
             if keys[K_LEFT]:
-                self.displacementX += -displacement_change_rate
+                self.displacement_x += -displacement_change_rate
             if keys[K_o]:
-                self.displacementY += displacement_change_rate
+                self.displacement_y += displacement_change_rate
             if keys[K_l]:
-                self.displacementY += -displacement_change_rate
+                self.displacement_y += -displacement_change_rate
             if keys[K_F11]:
                 pygame.display.toggle_fullscreen()
             self.clock.tick(frame_rate)
@@ -472,40 +472,40 @@ class Visualisation3D:
             for point in self.points:
                 # Rotate the point around the x-axis, the y-axis and the z-axis.
                 p_prime = point.rotate(
-                    angleX = self.angleX,
-                    angleY = self.angleY,
-                    angleZ = self.angleZ
+                    angle_x = self.angle_x,
+                    angle_y = self.angle_y,
+                    angle_z = self.angle_z
                 )
                 # Translate the point.
                 p_prime_prime = p_prime.translate(
-                    displacementX = self.displacementX,
-                    displacementY = self.displacementY,
-                    displacementZ = self.displacementZ
+                    displacement_x = self.displacement_x,
+                    displacement_y = self.displacement_y,
+                    displacement_z = self.displacement_z
                 )
                 # Project the 3D point to 2D.
-                point2D = p_prime_prime.project(
+                point_2D = p_prime_prime.project(
                     window_width    = self.display.get_width(),
                     window_height   = self.display.get_height(),
                     field_of_view   = 256,
                     viewer_distance = viewer_distance
                 )
                 # Round the 2D point for display.
-                x = int(point2D.x)
-                y = int(point2D.y)
+                x = int(point_2D.x)
+                y = int(point_2D.y)
                 self.display.fill(
-                    point.colorRGB(),
-                    (x, y, point.sizeX(), point.sizeY())
+                    point.color_RGB(),
+                    (x, y, point.size_x(), point.size_y())
                 )
-            if geometryStatus is True:
+            if geometry_status is True:
                 self.display.blit(
-                    geometryStatusTextBox(
-                        angleX            = self.angleX,
-                        angleY            = self.angleY,
-                        angleZ            = self.angleZ,
-                        displacementX     = self.displacementX,
-                        displacementY     = self.displacementY,
-                        displacementZ     = self.displacementZ,
-                        font              = self.font
+                    geometry_status_text_box(
+                        angle_x        = self.angle_x,
+                        angle_y        = self.angle_y,
+                        angle_z        = self.angle_z,
+                        displacement_x = self.displacement_x,
+                        displacement_y = self.displacement_y,
+                        displacement_z = self.displacement_z,
+                        font           = self.font
                     ),
                     (0, 0)
                 )
