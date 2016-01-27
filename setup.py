@@ -8,7 +8,7 @@ def main():
 
     setuptools.setup(
         name             = "yutu",
-        version          = "2016.01.27.1252",
+        version          = "2016.01.27.1317",
         description      = "point cloud representations and movements",
         long_description = Markdown_to_reStructuredText("README.md"),
         url              = "https://github.com/wdbm/yutu",
