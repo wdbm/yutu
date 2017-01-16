@@ -33,7 +33,7 @@
 """
 
 name    = "yutu"
-version = "2016-01-27T1324Z"
+version = "2017-01-16T1603Z"
 
 import sys
 import math
@@ -157,17 +157,17 @@ def text_box(
     return(surface)
 
 def geometry_status_text_box(
-    angle_x            = None,
-    angle_y            = None,
-    angle_z            = None,
-    displacement_x     = None,
-    displacement_y     = None,
-    displacement_z     = None,
-    font              = None,
-    x1                = 0,
-    y1                = 0,
-    x2                = 300,
-    y2                = 127
+    angle_x        = None,
+    angle_y        = None,
+    angle_z        = None,
+    displacement_x = None,
+    displacement_y = None,
+    displacement_z = None,
+    font           = None,
+    x1             = 0,
+    y1             = 0,
+    x2             = 300,
+    y2             = 127
     ):
     _geometry_status = "angles:         x: {angle_x}\n"        + \
                        "                y: {angle_y}\n"        + \
