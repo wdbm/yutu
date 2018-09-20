@@ -24,4 +24,4 @@ Data by Dorit Borrmann and Hassan Afzal of Jacobs University Bremen gGmbH was pr
 
 # future
 
-Under consideration are rigid body movement matrices and perspective projection data cuts.
+Under consideration are more vectorization, rigid body movement matrices and perspective projection data cuts.
