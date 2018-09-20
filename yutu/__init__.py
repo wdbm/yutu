@@ -32,15 +32,16 @@
 ################################################################################
 """
 
-name    = "yutu"
-version = "2017-01-16T1603Z"
-
-import sys
-import math
-import numpy
 import csv
-import pygame
+import math
+import sys
+
 from   pygame.locals import *
+import numpy
+import pygame
+
+name        = "yutu"
+__version__ = "2018-09-20T1342Z"
 
 def radians(degrees):
     return(degrees * math.pi / 180)
@@ -57,7 +58,7 @@ def list_percentage(
     ):
     # This function returns a list that is a percentage of evenly-distributed
     # elements of an input list.
-    return list_full[::int(100.0/percentage)]
+    return list_full[::int(100.0 / percentage)]
 
 def clamp(x): 
     return(max(0, min(x, 255)))
@@ -288,10 +289,21 @@ class P:
 
 def load_yutu_file(
     filename   = None,
-    percentage = 100
+    percentage = 100,
+    version    = "2016-01-27T1252Z"
     ):
+    """
+    # version 2016-01-27T1252Z
+    
+    This file format is plaintext single-whitespace delimited with the following
+    order of fields:
+    
+    x y z r g b
+    
+    The coordinates are x, y, z and the point color is r, g, b.
+    """
     points = []
-    nmation = int(100.0/percentage)
+    nmation = int(100.0 / percentage)
     line_number = 1
     for line in csv.reader(
         open(filename),
