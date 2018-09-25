@@ -7,8 +7,8 @@ import setuptools
 def main():
     setuptools.setup(
         name                 = "yutu",
-        version              = "2018.09.20.1342",
-        description          = "point cloud representations and movements",
+        version              = "2018.09.25.1715",
+        description          = "point cloud visualisations and manipulations",
         long_description     = long_description(),
         url                  = "https://github.com/wdbm/yutu",
         author               = "Will Breaden Madden",

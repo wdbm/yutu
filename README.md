@@ -1,8 +1,8 @@
 # yutu
 
-![](https://raw.githubusercontent.com/wdbm/yutu/master/media/bunny.png)
+![](https://raw.githubusercontent.com/wdbm/yutu/master/media/yutu_tty.gif)
 
-point cloud representations and movements
+This package can display and move point cloud data in color using VisPy, PyGame and the terminal.
 
 # setup
 

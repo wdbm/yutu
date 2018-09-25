@@ -9,7 +9,7 @@
 #                                                                              #
 # LICENCE INFORMATION                                                          #
 #                                                                              #
-# This program provides point manipulation procedures.                         #
+# This program provides point cloud visualisations and manipulations.          #
 #                                                                              #
 # copyright (C) 2015 William Breaden Madden                                    #
 #                                                                              #
@@ -32,16 +32,22 @@
 ################################################################################
 """
 
+import curses
 import csv
 import math
 import sys
+from time import sleep
 
+import drawille
+import pandas as pd
 from   pygame.locals import *
 import numpy
 import pygame
+import vispy.scene
+from vispy.scene import visuals
 
 name        = "yutu"
-__version__ = "2018-09-20T1342Z"
+__version__ = "2018-09-25T1715Z"
 
 def radians(degrees):
     return(degrees * math.pi / 180)
@@ -52,14 +58,6 @@ def Cos(angle_in_degrees):
 def Sin(angle_in_degrees):
     return(math.sin(radians(angle_in_degrees)))
 
-def list_percentage(
-    list_full  = None,
-    percentage = None
-    ):
-    # This function returns a list that is a percentage of evenly-distributed
-    # elements of an input list.
-    return list_full[::int(100.0 / percentage)]
-
 def clamp(x): 
     return(max(0, min(x, 255)))
 
@@ -68,21 +66,23 @@ def RGB_to_HEX(RGB_tuple):
     r = RGB_tuple[0]
     g = RGB_tuple[1]
     b = RGB_tuple[2]
-    return("#{0:02x}{1:02x}{2:02x}".format(clamp(r), clamp(g), clamp(b)))
+    return("#{0:02x}{1:02x}{2:02x}".format(int(clamp(r)), int(clamp(g)), int(clamp(b))))
 
 def HEX_to_RGB(HEX_string):
     # This function returns an RGB tuple given a HEX string.
     HEX = HEX_string.lstrip('#')
     HEX_length = len(HEX)
-    return(
-        tuple(
-            int(HEX[i:i + HEX_length // 3], 16) for i in range(
-                0,
-                HEX_length,
-                HEX_length // 3
-            )
-        )
-    )
+    return tuple(
+               int(HEX[i:i + HEX_length // 3], 16) for i in range(
+                   0,
+                   HEX_length,
+                   HEX_length // 3
+               )
+           )
+
+def terminal_dimensions():
+    #return curses.initscr().getmaxyx()
+    return drawille.getTerminalSize()
 
 class TextRectException:
     def __init__(self, message = None):
@@ -170,11 +170,11 @@ def geometry_status_text_box(
     x2             = 300,
     y2             = 127
     ):
-    _geometry_status = "angles:         x: {angle_x}\n"        + \
-                       "                y: {angle_y}\n"        + \
-                       "                z: {angle_z}\n\n"      + \
-                       "displacement:   x: {displacement_x}\n" + \
-                       "                y: {displacement_y}\n" + \
+    _geometry_status = "angles:         x: {angle_x}\n"        +\
+                       "                y: {angle_y}\n"        +\
+                       "                z: {angle_z}\n\n"      +\
+                       "displacement:   x: {displacement_x}\n" +\
+                       "                y: {displacement_y}\n" +\
                        "                z: {displacement_z}\n"
     geometry_status = _geometry_status.format(
         angle_x            = angle_x,
@@ -195,330 +195,276 @@ def geometry_status_text_box(
         )
     return(geometry_status_text_box)
 
-class P:
-
-    def __init__(
-        self,
-        x           = 0,
-        y           = 0,
-        z           = 0,
-        color       = "#ffffff",
-        size_x      = None,
-        size_y      = None,
-        size        = 1
-        ):
-        self.x      = float(x)
-        self.y      = float(y)
-        self.z      = float(z)
-        self._color = color
-        if size_x is None and size_y is None:
-            self._size_x = size
-            self._size_y = size
-        else:
-            self._size_x = size_x
-            self._size_y = size_y
- 
-    def rotate(
-        self,
-        angle_x = 0,
-        angle_y = 0,
-        angle_z = 0
-        ):
-        # rotation around x-axis
-        xx = self.x
-        yx = self.y * Cos(angle_x) - self.z * Sin(angle_x)
-        zx = self.y * Sin(angle_x) + self.z * Cos(angle_x)
-        # rotation around y-axis
-        xyx = zx    * Sin(angle_y) + xx     * Cos(angle_y)
-        yyx = yx
-        zyx = zx    * Cos(angle_y) - xx     * Sin(angle_y)
-        # rotation around z-axis
-        xzyx = xyx  * Cos(angle_z) - yyx    * Sin(angle_z)
-        yzyx = xyx  * Sin(angle_z) + yyx    * Cos(angle_z)
-        zzyx = zyx
-        return(P(xzyx, yzyx, zzyx))
- 
-    def translate(
-        self,
-        displacement_x = 0,
-        displacement_y = 0,
-        displacement_z = 0
-        ):
-        x = self.x + displacement_x
-        y = self.y + displacement_y
-        z = self.z + displacement_z
-        return(P(x, y, z))
- 
-    def project(
-        self,
-        window_width    = None,
-        window_height   = None,
-        field_of_view   = None,
-        viewer_distance = None
-        ):
-        # convert viewer distance to float
-        viewer_distance = float(viewer_distance)
-        # generate 2D perspective projection of point
-        if viewer_distance != -self.z:
-            factor = field_of_view / (viewer_distance + self.z)
-        else:
-            factor = 50000000
-        x =  self.x * factor + window_width / 2
-        y = -self.y * factor + window_height / 2
-        return(P(x, y, 1))
-
-    def color_HEX(
-        self
-        ):
-        return(self._color)
-
-    def color_RGB(
-        self
-        ):
-        return(HEX_to_RGB(self._color))
-
-    def size_x(
-        self
-        ):
-        return(self._size_x)
-
-    def size_y(
-        self
-        ):
-        return(self._size_y)
-
 def load_yutu_file(
-    filename   = None,
-    percentage = 100,
-    version    = "2016-01-27T1252Z"
+    filepath   = None,
+    percentage = None,
+    s          = 1
     ):
     """
-    # version 2016-01-27T1252Z
-    
-    This file format is plaintext single-whitespace delimited with the following
-    order of fields:
-    
-    x y z r g b
-    
-    The coordinates are x, y, z and the point color is r, g, b.
+    Load from a plaintext delimited file with fields x, y, z, r, g, b, s. The
+    coordinates (x, y, z) are required and the colors (r, g, b) and the sizes
+    (s) are optional. Return the data as a pandas DataFrame.
     """
-    points = []
-    nmation = int(100.0 / percentage)
-    line_number = 1
-    for line in csv.reader(
-        open(filename),
-        delimiter = " ",
-        skipinitialspace = True
-        ):
-        if line and line_number % nmation == 0:
-            x = line[0]
-            y = line[1]
-            z = line[2]
-            r = int(line[3])
-            g = int(line[4])
-            b = int(line[5])
-            point = P(x, y, z, color = RGB_to_HEX((r, g, b)), size = 1)
-            points.append(point)
-        line_number += 1
-    return(points)
+    df = pd.read_csv(filepath, sep = "\s*,\s*", engine = "python")
+    if percentage: df = df[::int(100 / percentage)]
+    df = tidy(df, s = s)
+    return df
 
-def P_to_NumPyArray(
-    points = None
+def tidy(
+    df,
+    s = 1
     ):
-    number_of_points = len(points)
-    array = numpy.zeros(shape = (number_of_points, 3))
-    for index, point in enumerate(points):
-        array[index] = [point.x, point.y, point.z]
-    return array
+    df["s"]             = df["s"].fillna(s)
+    df[["r", "g", "b"]] = df[["r", "g", "b"]].fillna(255)
+    df["hexcolor"]      = df.apply(lambda row: RGB_to_HEX((row["r"], row["g"], row["b"])), axis = 1)
+    return df
 
-class Visualisation3D:
+def rotate_point(
+    x       = 0,
+    y       = 0,
+    z       = 0,
+    angle_x = 0,
+    angle_y = 0,
+    angle_z = 0
+    ):
+    # rotation around x-axis
+    xx  = x
+    yx  = y    * Cos(angle_x) - z   * Sin(angle_x)
+    zx  = y    * Sin(angle_x) + z   * Cos(angle_x)
+    # rotation around y-axis
+    xyx = zx   * Sin(angle_y) + xx  * Cos(angle_y)
+    yyx = yx
+    zyx = zx   * Cos(angle_y) - xx  * Sin(angle_y)
+    # rotation around z-axis
+    xzyx = xyx * Cos(angle_z) - yyx * Sin(angle_z)
+    yzyx = xyx * Sin(angle_z) + yyx * Cos(angle_z)
+    zzyx = zyx
+    return (xzyx, yzyx, zzyx)
 
+def project_point(
+    x               = 0,
+    y               = 0,
+    z               = 0,
+    window_width    = None,
+    window_height   = None,
+    field_of_view   = None,
+    viewer_distance = None
+    ):
+    viewer_distance = float(viewer_distance)
+    # generate 2D perspective projection of point
+    if viewer_distance != -z:
+        factor = field_of_view / (viewer_distance + z)
+    else:
+        factor = 50000000 # infinity
+    x =  x * factor + window_width / 2
+    y = -y * factor + window_height / 2
+    return (x, y, 1)
+
+class Projection(object):
     def __init__(
         self,
-        window_width   = 1280,
-        window_height  = 960,
-        caption        = "points visualisation",
-        points         = None,
-        percentage     = 100
+        df = None,
+        s  = 1
         ):
-        if percentage is not 100:
-            self.points = list_percentage(
-                list_full  = points,
-                percentage = percentage
-            )
-        else:
-            self.points = points
-        pygame.init()
-        self.display = pygame.display.set_mode((window_width, window_height))
-        pygame.display.set_caption(caption)
-        self.clock = pygame.time.Clock()
-        pygame.key.set_repeat(10, 10)
-        self.font = pygame.font.SysFont("monospace", 15)
- 
-    def run_rotation(
-        self,
-        viewer_distance     = 4,
-        angle_change_rate   = 1,
-        frame_rate          = 50,
-        angle_x             = 0,
-        angle_y             = 0,
-        angle_z             = 0,
-        displacement_x      = 0,
-        displacement_y      = 0,
-        displacement_z      = 0,
-        geometry_status     = True
-        ):
-        self.angle_x        = angle_x
-        self.angle_y        = angle_y
-        self.angle_z        = angle_z
-        self.displacement_x = displacement_x
-        self.displacement_y = displacement_y
-        self.displacement_z = displacement_z
-        while True:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    sys.exit()
-                elif event.type == KEYDOWN and event.key == K_ESCAPE:
-                    sys.exit()
-            keys = pygame.key.get_pressed()
-            if keys[K_F11]:
-                pygame.display.toggle_fullscreen()
-            self.clock.tick(frame_rate)
-            self.display.fill((0, 0, 0))
-            # Move all points.
-            for point in self.points:
-                # Rotate the point around the x-axis, the y-axis and the z-axis.
-                p_prime = point.rotate(
-                    angle_x = self.angle_x,
-                    angle_y = self.angle_y,
-                    angle_z = self.angle_z
-                )
-                # Project the 3D point to 2D.
-                point_2D = p_prime.project(
-                    window_width    = self.display.get_width(),
-                    window_height   = self.display.get_height(),
-                    field_of_view   = 256,
-                    viewer_distance = viewer_distance
-                )
-                # Round the 2D point for display.
-                x = int(point_2D.x)
-                y = int(point_2D.y)
-                self.display.fill(
-                    point.color_RGB(),
-                    (x, y, point.size_x(), point.size_y())
-                )
-            self.angle_x += angle_change_rate
-            self.angle_y += angle_change_rate
-            self.angle_z += angle_change_rate
-            if geometry_status is True:
-                self.display.blit(
-                    geometry_status_text_box(
-                        angle_x            = self.angle_x,
-                        angle_y            = self.angle_y,
-                        angle_z            = self.angle_z,
-                        displacement_x     = self.displacement_x,
-                        displacement_y     = self.displacement_y,
-                        displacement_z     = self.displacement_z,
-                        font              = self.font
-                    ),
-                    (0, 0)
-                )
-            pygame.display.flip()
+        self.df = tidy(df, s = s)
+        self.configure()
+    def configure(self, **kwargs):
+        defaults = {
+            "mode"                    : "rotate",
+            #"mode"                    : "control_rigid_body_motions",
+            "window_width"            : 1280,
+            "window_height"           : 960,
+            "field_of_view"           : 256,
+            "viewer_distance"         : 4,
+            "angle_change_rate"       : 2,
+            "displacement_change_rate": 0.2,
+            "angle_x"                 : 0,
+            "angle_y"                 : 0,
+            "angle_z"                 : 0,
+            "displacement_x"          : 0,
+            "displacement_y"          : 0,
+            "displacement_z"          : 0
+        }
+        self.__dict__.update(defaults)
+        self.__dict__.update(kwargs)
+        self._project()
+    def _project(self):
+        self.df["prime"] = self.df.apply(lambda row: rotate_point(
+            x               = row["x"],
+            y               = row["y"],
+            z               = row["z"],
+            angle_x         = self.angle_x,
+            angle_y         = self.angle_y,
+            angle_z         = self.angle_z
+        ), axis = 1)
+        self.df["prime"] = self.df.apply(lambda row: (
+            row["prime"][0] + self.displacement_x,
+            row["prime"][1] + self.displacement_y,
+            row["prime"][2] + self.displacement_z,
+        ), axis = 1)
+        self.df["project"] = self.df.apply(lambda row: project_point(
+            x               = row["prime"][0],
+            y               = row["prime"][1],
+            z               = row["prime"][2],
+            window_width    = self.window_width,
+            window_height   = self.window_height,
+            field_of_view   = self.field_of_view,
+            viewer_distance = self.viewer_distance
+        ), axis=1)
+    def update(self):
+        if self.mode == "rotate":
+            self.angle_x += self.angle_change_rate
+            self.angle_y += self.angle_change_rate
+            self.angle_z += self.angle_change_rate
+        self._project()
 
-    def run_control_rigid_body_motions(
+class Projection_Pygame(object):
+    def __init__(
         self,
-        viewer_distance          = 4,
-        angle_change_rate        = 2,
-        displacement_change_rate = 0.2,
-        frame_rate               = 50,
-        angle_x                  = 0,
-        angle_y                  = 0,
-        angle_z                  = 0,
-        displacement_x           = 0,
-        displacement_y           = 0,
-        displacement_z           = 0,
-        geometry_status          = True
+        projection           = None,
+        caption              = "points visualisation",
+        geometry_status      = False
         ):
-        self.angle_x             = angle_x
-        self.angle_y             = angle_y
-        self.angle_z             = angle_z
-        self.displacement_x      = displacement_x
-        self.displacement_y      = displacement_y
-        self.displacement_z      = displacement_z
+        self.projection      = projection
+        self.caption         = caption
+        self.geometry_status = geometry_status
+        self.projection.configure(
+            window_width    = 1280,
+            window_height   = 960,
+            field_of_view   = 256,
+            viewer_distance = 4
+        )
+        pygame.init()
+        self.display         = pygame.display.set_mode((projection.window_width, projection.window_height))
+        self.frame_rate      = 50
+        self.clock           = pygame.time.Clock()
+        self.font            = pygame.font.SysFont("monospace", 15)
+        pygame.display.set_caption(self.caption)
+        pygame.key.set_repeat(10, 10)
+    def run(self):
         while True:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    sys.exit()
-                elif event.type == KEYDOWN and event.key == K_ESCAPE:
-                    sys.exit()
-            keys = pygame.key.get_pressed()
-            if keys[K_w]:
-                self.angle_x        += angle_change_rate
-            if keys[K_s]:
-                self.angle_x        += -angle_change_rate
-            if keys[K_d]:
-                self.angle_y        += -angle_change_rate
-            if keys[K_a]:
-                self.angle_y        += angle_change_rate
-            if keys[K_q]:
-                self.angle_z        += angle_change_rate
-            if keys[K_e]:
-                self.angle_z        += -angle_change_rate
-            if keys[K_UP]:
-                self.displacement_z += displacement_change_rate
-            if keys[K_DOWN]:
-                self.displacement_z += -displacement_change_rate
-            if keys[K_RIGHT]:
-                self.displacement_x += displacement_change_rate
-            if keys[K_LEFT]:
-                self.displacement_x += -displacement_change_rate
-            if keys[K_o]:
-                self.displacement_y += displacement_change_rate
-            if keys[K_l]:
-                self.displacement_y += -displacement_change_rate
-            if keys[K_F11]:
-                pygame.display.toggle_fullscreen()
-            self.clock.tick(frame_rate)
+            self.clock.tick(self.frame_rate)
             self.display.fill((0, 0, 0))
-            # Move all points.
-            for point in self.points:
-                # Rotate the point around the x-axis, the y-axis and the z-axis.
-                p_prime = point.rotate(
-                    angle_x = self.angle_x,
-                    angle_y = self.angle_y,
-                    angle_z = self.angle_z
-                )
-                # Translate the point.
-                p_prime_prime = p_prime.translate(
-                    displacement_x = self.displacement_x,
-                    displacement_y = self.displacement_y,
-                    displacement_z = self.displacement_z
-                )
-                # Project the 3D point to 2D.
-                point_2D = p_prime_prime.project(
-                    window_width    = self.display.get_width(),
-                    window_height   = self.display.get_height(),
-                    field_of_view   = 256,
-                    viewer_distance = viewer_distance
-                )
-                # Round the 2D point for display.
-                x = int(point_2D.x)
-                y = int(point_2D.y)
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT or event.type == KEYDOWN and event.key == K_ESCAPE:
+                    sys.exit()
+            if self.projection.mode == "control_rigid_body_motions":
+                keys = pygame.key.get_pressed()
+                if keys[K_w]:     self.projection.angle_x        +=  self.projection.angle_change_rate
+                if keys[K_s]:     self.projection.angle_x        += -self.projection.angle_change_rate
+                if keys[K_d]:     self.projection.angle_y        += -self.projection.angle_change_rate
+                if keys[K_a]:     self.projection.angle_y        +=  self.projection.angle_change_rate
+                if keys[K_q]:     self.projection.angle_z        +=  self.projection.angle_change_rate
+                if keys[K_e]:     self.projection.angle_z        += -self.projection.angle_change_rate
+                if keys[K_UP]:    self.projection.displacement_z +=  self.projection.displacement_change_rate
+                if keys[K_DOWN]:  self.projection.displacement_z += -self.projection.displacement_change_rate
+                if keys[K_RIGHT]: self.projection.displacement_x +=  self.projection.displacement_change_rate
+                if keys[K_LEFT]:  self.projection.displacement_x += -self.projection.displacement_change_rate
+                if keys[K_o]:     self.projection.displacement_y +=  self.projection.displacement_change_rate
+                if keys[K_l]:     self.projection.displacement_y += -self.projection.displacement_change_rate
+                if keys[K_F11]:   pygame.display.toggle_fullscreen()
+            for p in self.projection.df[["project", "hexcolor", "s"]].values:
                 self.display.fill(
-                    point.color_RGB(),
-                    (x, y, point.size_x(), point.size_y())
+                    HEX_to_RGB(p[1]),
+                    (
+                        int(p[0][0]), # x
+                        int(p[0][1]), # y
+                        p[2],         # s
+                        p[2]          # s
+                    )
                 )
-            if geometry_status is True:
+                #self.display.set_at(
+                #    (
+                #        int(p[0][0]), # x
+                #        int(p[0][1])  # y
+                #
+                #    ),
+                #    HEX_to_RGB(p[1]),
+                #)
+            if self.geometry_status is True:
                 self.display.blit(
                     geometry_status_text_box(
-                        angle_x        = self.angle_x,
-                        angle_y        = self.angle_y,
-                        angle_z        = self.angle_z,
-                        displacement_x = self.displacement_x,
-                        displacement_y = self.displacement_y,
-                        displacement_z = self.displacement_z,
+                        angle_x        = self.projection.angle_x,
+                        angle_y        = self.projection.angle_y,
+                        angle_z        = self.projection.angle_z,
+                        displacement_x = self.projection.displacement_x,
+                        displacement_y = self.projection.displacement_y,
+                        displacement_z = self.projection.displacement_z,
                         font           = self.font
                     ),
                     (0, 0)
                 )
             pygame.display.flip()
+            self.projection.update()
+
+class Projection_tty(object):
+    """
+    The package drawille draws in the console using Unicode Braille characters.
+    Unicode Braille characters are a 4 by 2 matrix that can be used as a
+    sub-matrix for each character in a console screen, so using Unicode Braille
+    characters effectively raises the resolution of a terminal by a factor of 8.
+    """
+    def __init__(
+        self,
+        projection      = None
+        ):
+        self.projection = projection
+        window_width    = (terminal_dimensions()[0] - 1) * 2
+        window_height   = (terminal_dimensions()[1] - 1) * 4
+        self.projection.configure(
+            window_width    = window_width,
+            window_height   = window_height,
+            field_of_view   = 40,
+            viewer_distance = 4
+        )
+        self.frame_rate = 50
+        self.clock      = pygame.time.Clock()
+        self.stdscr     = curses.initscr()
+        self.stdscr.refresh()
+        self.canvas     = drawille.Canvas()
+        self.canvas.set(0, 0)
+        self.canvas.set(window_width, window_height)
+    def run(self):
+        while True:
+            for p in self.projection.df[["project", "hexcolor", "s"]].values:
+                x = int(p[0][0])
+                y = int(p[0][1])
+                self.canvas.set(x, y)
+            f = self.canvas.frame(
+                0,                                 # min x
+                0,                                 # min y
+                int(self.projection.window_width), # max x
+                int(self.projection.window_height) # max y
+            )
+            self.stdscr.addstr(0, 0, "{0}\n".format(f))
+            self.stdscr.refresh()
+            self.clock.tick(self.frame_rate)
+            self.canvas.clear()
+            self.projection.update()
+
+class Projection_VisPy(object):
+    def __init__(
+        self,
+        df       = None,
+        s_factor = 3
+        ):
+        self.df       = df
+        self.s_factor = s_factor
+        self.canvas   = vispy.scene.SceneCanvas(
+            keys = "interactive",
+            show = True
+        )
+        self.view = self.canvas.central_widget.add_view()
+        #self.axis = visuals.XYZAxis(parent = self.view.scene)
+        self.scatter = visuals.Markers()
+        self.scatter.set_data(
+            self.df[["x", "y", "z"]].as_matrix(),
+            edge_color = None,
+            face_color = (df[["r", "g", "b"]] / 255).as_matrix(),
+            size       = self.df["s"].values * self.s_factor
+        )
+        self.view.add(self.scatter)
+        self.view.camera = "fly" #vispy.scene.FlyCamera()
+        #self.view.camera = "turntable"
+    def run(self):
+        vispy.app.run()
