@@ -32,13 +32,15 @@
 ################################################################################
 """
 
-import curses
+from collections import defaultdict
 import csv
+import curses
 import math
+import math
+import os
+import subprocess
 import sys
-from time import sleep
 
-import drawille
 import pandas as pd
 from   pygame.locals import *
 import numpy
@@ -47,7 +49,7 @@ import vispy.scene
 from vispy.scene import visuals
 
 name        = "yutu"
-__version__ = "2018-09-25T1715Z"
+__version__ = "2018-09-25T2034Z"
 
 def radians(degrees):
     return(degrees * math.pi / 180)
@@ -62,27 +64,31 @@ def clamp(x):
     return(max(0, min(x, 255)))
 
 def RGB_to_HEX(RGB_tuple):
-    # This function returns a HEX string given an RGB tuple.
+    """
+    Return a HEX string given an RGB tuple.
+    """
     r = RGB_tuple[0]
     g = RGB_tuple[1]
     b = RGB_tuple[2]
     return("#{0:02x}{1:02x}{2:02x}".format(int(clamp(r)), int(clamp(g)), int(clamp(b))))
 
 def HEX_to_RGB(HEX_string):
-    # This function returns an RGB tuple given a HEX string.
+    """
+    Return an RGB tuple given a HEX string.
+    """
     HEX = HEX_string.lstrip('#')
     HEX_length = len(HEX)
     return tuple(
-               int(HEX[i:i + HEX_length // 3], 16) for i in range(
+               int(HEX[i:i + int(HEX_length / 3)], 16) for i in range(
                    0,
                    HEX_length,
-                   HEX_length // 3
+                   int(HEX_length / 3)
                )
            )
 
 def terminal_dimensions():
-    #return curses.initscr().getmaxyx()
-    return drawille.getTerminalSize()
+    rows, columns = subprocess.check_output(["stty", "size"]).split()
+    return (int(columns), int(rows))
 
 class TextRectException:
     def __init__(self, message = None):
@@ -98,18 +104,21 @@ def text_box(
     background_color = (0, 0, 0),       # RGB tuple
     justification    = 0                # 0 (default): left, 1: center, 2: right
     ):
-    # This function returns a surface containing specified text, anti-aliased
-    # and reformatted to fit within the rectangle, word-wrapping as necessary.
+    """
+    Return a surface containing specified text, anti-aliased and reformatted to
+    fit within the specified rectangle, wrapping as necessary.
+    """
     final_lines = []
     requested_lines = text.splitlines()
-    # Create a series of lines to fit in the provided rectangle.
+    # Create a series of lines to fit in the specified rectangle.
     for requested_line in requested_lines:
         if font.size(requested_line)[0] > rect.width:
             words = requested_line.split(' ')
             # If any of the words are too long to fit, return.
             for word in words:
                 if font.size(word)[0] >= rect.width:
-                    # word too long to fit in rect specified
+                    # Raise an exception if the word is too long to fit in the
+                    # specified rectangle.
                     raise(Exception)
             # Start a new line.
             accumulated_line = ""
@@ -130,7 +139,8 @@ def text_box(
     accumulated_height = 0
     for line in final_lines:
         if accumulated_height + font.size(line)[1] >= rect.height:
-            # once word-wrapped, text too tall to fit in rect specified
+            # Raise an exception if the wrapped text is too tall to fit in the
+            # specified rectangle.
             raise(Exception)
         if line != "":
             temporary_surface = font.render(line, 1, text_color)
@@ -152,7 +162,8 @@ def text_box(
                     accumulated_height)
                 )
             else:
-                # invalid justification specified
+                # Raise an exception if there is invalid justification
+                # specified.
                 raise(Excepton)
         accumulated_height += font.size(line)[1]
     return(surface)
@@ -260,6 +271,179 @@ def project_point(
     y = -y * factor + window_height / 2
     return (x, y, 1)
 
+class Canvas_TTY(object):
+    """
+    Create a terminal pixel surface in which Unicode Braille characters are used
+    to draw pixels. Unicode Braille characters are a 4 by 2 matrix that can be
+    used as a sub-matrix for each character in a terminal, so assuming the
+    initial resolution of the terminal to be defined by one pixel corresponding
+    to one character, using Unicode Braille characters effectively raises the
+    resolution of a terminal by a factor of 8.
+
+    Braille pattern dots:
+       ,___,
+       |1 4|
+       |2 5|
+       |3 6|
+       |7 8|
+       `````
+    """
+    def __init__(self, carriage_return = os.linesep):
+        super(Canvas_TTY, self).__init__()
+        self.clear()
+        self.carriage_return = carriage_return
+        self.pixel_map = ((0x01, 0x08),
+                          (0x02, 0x10),
+                          (0x04, 0x20),
+                          (0x40, 0x80))
+        # Braille Unicode characters start at 0x2800.
+        self.braille_character_offset = 0x2800
+
+    def Braille_coordinates(self, x, y):
+        """
+        Convert coordinates (x, y) to Unicode Braille (columns, rows).
+        """
+        return int(round(x) / 2), int(round(y) / 4)
+
+    def clear(self):
+        """
+        Clear all pixels.
+        """
+        self.characters = defaultdict(lambda: defaultdict(int))
+
+    def set(self, x, y):
+        """
+        Set a pixel at coordinate (x, y).
+        """
+        column, row = self.Braille_coordinates(x, y)
+        self.characters[row][column] |= self.pixel_map[y % 4][x % 2]
+
+    def unset(self, x, y):
+        """
+        Unset a pixel at coordinate (x, y).
+        """
+        column, row = self.Braille_coordinates(x, y)
+        self.characters[row][column] &= ~self.pixel_map[y % 4][x % 2]
+
+    def toggle(self, x, y):
+        """
+        Toggle a pixel at coordinate (x, y).
+        """
+        column, row = self.Braille_coordinates(x, y)
+        if self.characters[row][column] & self.pixel_map[y % 4][x % 2]:
+            self.unset(x, y)
+        else:
+            self.set(x, y)
+
+    def set_text(self, x, y, text):
+        """
+        Set text at coordinate (x, y).
+        """
+        column, row = self.Braille_coordinates(x, y)
+        for index, character in enumerate(text):
+            self.characters[row][column + index] = character
+
+    def get(self, x, y):
+        """
+        Get the state of a pixel at coordinate (x, y).
+        """
+        dot_index = self.pixel_map[y % 4][x % 2]
+        column, row = self.Braille_coordinates(x, y)
+        character = self.characters.get(row, {}).get(column)
+        if not character:
+            return False
+        if type(character) != int:
+            return True
+        return bool(character & dot_index)
+
+    def rows(
+        self,
+        min_x = None, # minimum x coordinate of canvas
+        min_y = None, # minimum y coordinate of canvas
+        max_x = None, # maximum x coordinate of canvas
+        max_y = None  # maximum y coordinate of canvas
+        ):
+        """
+        Return a list of the current canvas object rows.
+        """
+        if not self.characters.keys():
+            return []
+        min_row    = int(min_y       / 4) if min_y != None else min(self.characters.keys())
+        max_row    = int((max_y - 1) / 4) if max_y != None else max(self.characters.keys())
+        min_column = int(min_x       / 2) if min_x != None else min(min(x.keys()) for x in self.characters.values())
+        max_column = int((max_x - 1) / 2) if max_x != None else max(max(x.keys()) for x in self.characters.values())
+        result = []
+        for row_number in range(min_row, max_row + 1):
+            if not row_number in self.characters:
+                result.append("")
+                continue
+            max_column = int((max_x - 1) / 2) if max_x != None else max(self.characters[row_number].keys())
+            row = []
+            for x in range(min_column, max_column + 1):
+                character = self.characters[row_number].get(x)
+                if not character:
+                    row.append(chr(self.braille_character_offset))
+                elif type(character) != int:
+                    row.append(character)
+                else:
+                    row.append(chr(self.braille_character_offset + character))
+            result.append("".join(row))
+        return result
+
+    def frame(
+        self,
+        min_x = None, # minimum x coordinate of canvas
+        min_y = None, # minimum y coordinate of canvas
+        max_x = None, # maximum x coordinate of canvas
+        max_y = None  # maximum y coordinate of canvas
+        ):
+        """
+        Return a string representation of canvas pixels.
+        """
+        ret = self.carriage_return.join(self.rows(min_x, min_y, max_x, max_y))
+        return ret
+
+    def line(x1, y1, x2, y2):
+        """
+        Yield the coordinates of the line from (x1, x2) to (x2, y2).
+        """
+        x1 = round(x1)
+        y1 = round(y1)
+        x2 = round(x2)
+        y2 = round(y2)
+        x_difference = max(x1, x2) - min(x1, x2)
+        y_difference = max(y1, y2) - min(y1, y2)
+        x_direction  = 1 if x1 <= x2 else -1
+        y_direction  = 1 if y1 <= y2 else -1
+        r = max(x_difference, y_difference)
+        for n in range(r + 1):
+            x = x1
+            y = y1
+            if y_difference: y += (float(n) * y_difference) / r * y_direction
+            if x_difference: x += (float(n) * x_difference) / r * x_direction
+            yield (x, y)
+    
+    def polygon(
+        center_x = 0,
+        center_y = 0,
+        sides    = 4,
+        radius   = 4
+        ):
+        """
+        Yield the coordinates of the lines of a polygon with specified center
+        coordinates, number of sides and radius.
+        """
+        degree = float(360) / sides
+        for n in range(sides):
+            a  = n * degree
+            b  = (n + 1) * degree
+            x1 = (center_x + math.cos(math.radians(a))) * (radius + 1) / 2
+            y1 = (center_y + math.sin(math.radians(a))) * (radius + 1) / 2
+            x2 = (center_x + math.cos(math.radians(b))) * (radius + 1) / 2
+            y2 = (center_y + math.sin(math.radians(b))) * (radius + 1) / 2
+            for x, y in line(x1, y1, x2, y2):
+                yield x, y
+
 class Projection(object):
     def __init__(
         self,
@@ -322,7 +506,7 @@ class Projection_Pygame(object):
     def __init__(
         self,
         projection           = None,
-        caption              = "points visualisation",
+        caption              = "PyGame canvas",
         geometry_status      = False
         ):
         self.projection      = projection
@@ -397,13 +581,7 @@ class Projection_Pygame(object):
             pygame.display.flip()
             self.projection.update()
 
-class Projection_tty(object):
-    """
-    The package drawille draws in the console using Unicode Braille characters.
-    Unicode Braille characters are a 4 by 2 matrix that can be used as a
-    sub-matrix for each character in a console screen, so using Unicode Braille
-    characters effectively raises the resolution of a terminal by a factor of 8.
-    """
+class Projection_TTY(object):
     def __init__(
         self,
         projection      = None
@@ -415,13 +593,13 @@ class Projection_tty(object):
             window_width    = window_width,
             window_height   = window_height,
             field_of_view   = 40,
-            viewer_distance = 4
+            viewer_distance = 3
         )
         self.frame_rate = 50
         self.clock      = pygame.time.Clock()
         self.stdscr     = curses.initscr()
         self.stdscr.refresh()
-        self.canvas     = drawille.Canvas()
+        self.canvas     = Canvas_TTY()
         self.canvas.set(0, 0)
         self.canvas.set(window_width, window_height)
     def run(self):
@@ -445,8 +623,9 @@ class Projection_tty(object):
 class Projection_VisPy(object):
     def __init__(
         self,
-        df       = None,
-        s_factor = 3
+        df          = None,
+        s_factor    = 3,
+        camera_type = "fly"
         ):
         self.df       = df
         self.s_factor = s_factor
@@ -464,7 +643,6 @@ class Projection_VisPy(object):
             size       = self.df["s"].values * self.s_factor
         )
         self.view.add(self.scatter)
-        self.view.camera = "fly" #vispy.scene.FlyCamera()
-        #self.view.camera = "turntable"
+        self.view.camera = camera_type
     def run(self):
         vispy.app.run()

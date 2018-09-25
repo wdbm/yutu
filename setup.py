@@ -7,7 +7,7 @@ import setuptools
 def main():
     setuptools.setup(
         name                 = "yutu",
-        version              = "2018.09.25.1715",
+        version              = "2018.09.25.2034",
         description          = "point cloud visualisations and manipulations",
         long_description     = long_description(),
         url                  = "https://github.com/wdbm/yutu",
@@ -16,7 +16,6 @@ def main():
         license              = "GPLv3",
         packages             = setuptools.find_packages(),
         install_requires     = [
-                               "drawille",
                                "pandas",
                                "vispy"
                                ],
